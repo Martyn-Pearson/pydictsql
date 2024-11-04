@@ -56,4 +56,8 @@ def test_tokentype_operators():
                                 (")", TokenType.RPAREN),
      ]:
           assert(TokenType.get_token(val) == expected)
+
+def test_tokentype_invalid():
+     for val in ["1dc", "?", "$", "'unfinished", '"unfinished']:
+          assert(TokenType.get_token(val) == None)
  
