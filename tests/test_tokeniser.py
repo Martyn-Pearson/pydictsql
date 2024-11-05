@@ -21,6 +21,15 @@ def test_single_tokens():
         assert tokeniser.peek_next() == None
         assert tokeniser.consume() == None
 
+def test_consume_expected():
+    tokeniser = Tokeniser("SELECT")
+    result = tokeniser.consume(TokenType.SELECT)
+    assert result.ttype == TokenType.SELECT
+
+def test_consume_expected_set():
+    tokeniser = Tokeniser("SELECT")
+    result = tokeniser.consume(set([TokenType.SELECT, TokenType.WHERE]))
+    assert result.ttype == TokenType.SELECT
 
 def test_space_separated():
     sql = "SELECT {ref1} , {ref2} FROM {data} WHERE {value1} = 'value' AND {value2} > 13.123"
