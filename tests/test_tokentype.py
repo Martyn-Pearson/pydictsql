@@ -11,6 +11,7 @@ def test_tokentype_keywords():
         ("WHERE", TokenType.WHERE),
         ("AND", TokenType.AND),
         ("OR", TokenType.OR),
+        ("NOT", TokenType.NOT),
         # Lower / mixed case keywords
         ("select", TokenType.SELECT),
         ("From", TokenType.FROM),

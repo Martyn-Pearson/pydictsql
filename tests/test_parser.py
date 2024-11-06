@@ -1,7 +1,7 @@
 import pytest
 
 from pydictsql.parser import Parser
-from pydictsql.tokeniser import UnexpectedTokenException, InvalidTokenException
+from pydictsql.tokeniser import UnexpectedTokenException, InvalidTokenException, TokenType
 
 def test_invalid_start():
     with pytest.raises(UnexpectedTokenException):
@@ -27,12 +27,20 @@ def test_multiple_references():
 
 def test_single_condition():
     parser = Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1")
+    assert(repr(parser.where_clause) == "{val1} > 1")
 
 def test_and_condition():
     parser = Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND {val2} <> 'STRVAL'")
+    assert(repr(parser.where_clause) == "{val1} > 1")
 
 def test_and_condition():
     parser = Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND {val2} <> 'STRVAL'")
+    assert(repr(parser.where_clause) == "{val1} > 1 AND {val2} <> 'STRVAL'")
 
 def test_andor_condition():
     parser = Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND {val2} <> 'STRVAL' OR {val1} = {val3}")
+    assert(repr(parser.where_clause) == "{val1} > 1 AND {val2} <> 'STRVAL' OR {val1} = {val3}")
+
+def test_bracketed_condition():
+    parser = Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND ({val2} <> 'STRVAL' OR {val1} = {val3})")
+    assert(repr(parser.where_clause) == "{val1} > 1 AND ( {val2} <> 'STRVAL' OR {val1} = {val3} )")

@@ -32,6 +32,7 @@ class TokenType(Enum):
     WHERE = 3
     AND = 4
     OR = 5
+    NOT = 6
 
     @classmethod
     def get_token(cls, val):
@@ -71,16 +72,8 @@ class TokenType(Enum):
         return None
 
     @classmethod
-    def is_logic_op(cls, ttype):
-        return ttype in cls.logic_ops()
-    
-    @classmethod
     def is_comparator(cls, ttype):
         return ttype in cls.comparators()
-    
-    @classmethod
-    def logic_ops(cls):
-        return set([cls.AND, cls.OR])
     
     @classmethod
     def comparators(cls):
