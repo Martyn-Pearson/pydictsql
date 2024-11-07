@@ -1,22 +1,22 @@
 import pytest
 
-from pydictsql.tokeniser import TokenType
+from pydictsql.tokeniser import _TokenType
 
 
 def test_tokentype_keywords():
     for val, expected in [
         # Keywords
-        ("SELECT", TokenType.SELECT),
-        ("FROM", TokenType.FROM),
-        ("WHERE", TokenType.WHERE),
-        ("AND", TokenType.AND),
-        ("OR", TokenType.OR),
-        ("NOT", TokenType.NOT),
+        ("SELECT", _TokenType.SELECT),
+        ("FROM", _TokenType.FROM),
+        ("WHERE", _TokenType.WHERE),
+        ("AND", _TokenType.AND),
+        ("OR", _TokenType.OR),
+        ("NOT", _TokenType.NOT),
         # Lower / mixed case keywords
-        ("select", TokenType.SELECT),
-        ("From", TokenType.FROM),
+        ("select", _TokenType.SELECT),
+        ("From", _TokenType.FROM),
     ]:
-        assert TokenType.get_token(val) == expected
+        assert _TokenType.get_token(val) == expected
 
 
 def test_tokentype_references():
@@ -28,7 +28,7 @@ def test_tokentype_references():
         "{select}",
         "{From}",
     ]:
-        assert TokenType.get_token(val) == TokenType.REFERENCE
+        assert _TokenType.get_token(val) == _TokenType.REFERENCE
 
 
 def test_tokentype_numbers():
@@ -46,29 +46,30 @@ def test_tokentype_numbers():
         "-11.2",
         "-11.21",
     ]:
-        assert TokenType.get_token(val) == TokenType.NUMBER
+        assert _TokenType.get_token(val) == _TokenType.NUMBER
 
 
 def test_tokentype_strings():
     for val in ["'asas'", '"asas"']:
-        assert TokenType.get_token(val) == TokenType.STRING
+        assert _TokenType.get_token(val) == _TokenType.STRING
 
 
 def test_tokentype_operators():
     for val, expected in [
-        ("=", TokenType.EQUALS),
-        ("<", TokenType.LT),
-        ("<=", TokenType.LTE),
-        (">", TokenType.GT),
-        (">=", TokenType.GTE),
-        ("<>", TokenType.NE),
-        ("(", TokenType.LPAREN),
-        (")", TokenType.RPAREN),
-        (",", TokenType.COMMA),
+        ("=", _TokenType.EQUALS),
+        ("<", _TokenType.LT),
+        ("<=", _TokenType.LTE),
+        (">", _TokenType.GT),
+        (">=", _TokenType.GTE),
+        ("<>", _TokenType.NE),
+        ("(", _TokenType.LPAREN),
+        (")", _TokenType.RPAREN),
+        (",", _TokenType.COMMA),
+        ("*", _TokenType.ASTERISK),
     ]:
-        assert TokenType.get_token(val) == expected
+        assert _TokenType.get_token(val) == expected
 
 
 def test_tokentype_invalid():
     for val in ["1dc", "?", "$", "'unfinished", '"unfinished']:
-        assert TokenType.get_token(val) == None
+        assert _TokenType.get_token(val) == None

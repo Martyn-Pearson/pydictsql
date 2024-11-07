@@ -4,15 +4,17 @@ import re
 from string import ascii_letters, digits
 import typing
 
+from pydictsql.exceptions import InvalidTokenError, UnexpectedTokenError
+
 REFERENCE_PAT = re.compile(r"{[^}]*}")
 NUMBER_PAT = re.compile(r"-?[0-9]+(\.[-0-9]+)?")
 STRING_PAT = re.compile(r"(['\"])[^'\"]*\1")
-OPERATORS = "=<>(),"
+SYMBOLS = "=<>(),*"
 
-Token = namedtuple("Token", ["ttype", "value"])
+_Token = namedtuple("Token", ["ttype", "value"])
 
 
-class TokenType(Enum):
+class _TokenType(Enum):
     REFERENCE = -1
     NUMBER = -2
     STRING = -3
@@ -26,6 +28,7 @@ class TokenType(Enum):
     LPAREN = -7
     RPAREN = -8
     COMMA = -9
+    ASTERISK = -10
 
     SELECT = 1
     FROM = 2
@@ -55,6 +58,7 @@ class TokenType(Enum):
             (cls.LPAREN, "("),
             (cls.RPAREN, ")"),
             (cls.COMMA, ","),
+            (cls.ASTERISK, "*"),
         ]:
             if val == expected:
                 return ttype
@@ -83,25 +87,7 @@ class TokenType(Enum):
     def rvalues(cls):
         return set([cls.REFERENCE, cls.STRING, cls.NUMBER])
 
-class InvalidTokenException(Exception):
-    """
-    Raised when tokenising and an invalid value is read
-    """
-    def __init__(self, token: str):
-        super().__init__(f"Invalid token: {token}")
-
-
-class UnexpectedTokenException(Exception):
-    """
-    Raised when parsing and an unexpected token is found
-    """
-    def __init__(self, found: Token, expected: TokenType = None):
-        super().__init__(
-            f"Unexpected token, expected {expected or 'end'}, found {found.ttype if found else 'no token'} with value {found.value if found else 'N/A'}."
-        )
-
-
-class Tokeniser:
+class _Tokeniser:
     """
     Constructs a tokeniser, which tokenises the given SQL string
     :param sql: SQL string to be tokenised
@@ -123,17 +109,17 @@ class Tokeniser:
     :raises ValueError: Raised if consumed token does not match expected type
     """
 
-    def consume(self, expected: typing.Optional[typing.Union[TokenType, set]] = None):
-        if expected and isinstance(expected, TokenType):
+    def consume(self, expected: typing.Optional[typing.Union[_TokenType, set]] = None):
+        if expected and isinstance(expected, _TokenType):
             expected = set([expected])
         if self._pos < len(self._tokens):
             token = self._tokens[self._pos]
             if expected and token.ttype not in expected:
-                raise UnexpectedTokenException(token, expected)
+                raise UnexpectedTokenError(token, expected)
             self._pos += 1
             return token
         elif expected:
-            raise UnexpectedTokenException(None, expected)
+            raise UnexpectedTokenError(None, expected)
         return None
 
     """
@@ -149,7 +135,7 @@ class Tokeniser:
     :returns: True if next token is of the type specified, False otherwise (including if there is no next token)
     """
 
-    def next_is(self, ttype: TokenType):
+    def next_is(self, ttype: _TokenType):
         next = self.peek_next()
         return next and next.ttype == ttype
 
@@ -169,7 +155,7 @@ class Tokeniser:
             elif curr in "'\"":
                 # This is a string, so collect up to and including the closing matching quote
                 token = self._collect(self._sql[self._pos])
-            elif curr in OPERATORS:
+            elif curr in SYMBOLS:
                 # This is an operator - either a single character or compound comparator, collect the whole operator
                 token = self._collect_operator()
             else:
@@ -177,11 +163,11 @@ class Tokeniser:
                 token = self._collect()
 
             if token:
-                ttype = TokenType.get_token(token)
+                ttype = _TokenType.get_token(token)
                 if ttype:
-                    yield Token(ttype, token)
+                    yield _Token(ttype, token)
                 else:
-                    raise InvalidTokenException(token)
+                    raise InvalidTokenError(token)
 
     def _collect(self, separator=None):
         result = self._sql[self._pos]
