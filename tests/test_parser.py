@@ -2,7 +2,7 @@ from pydictsql.exceptions import InvalidTokenError
 import pytest
 
 from pydictsql.parser import _Parser
-from pydictsql.exceptions import UnexpectedTokenError
+from pydictsql.exceptions import UnexpectedTokenError, UnrecognisedReferenceError
 
 """
 PARSING TESTS (Covering parsing of SQL)
@@ -54,6 +54,14 @@ def test_bracketed_condition():
     parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND ({val2} <> 'STRVAL' OR {val1} = {val3})")
     assert(repr(parser.where_clause) == "{val1} > 1 AND ( {val2} <> 'STRVAL' OR {val1} = {val3} )")
 
+def test_extraneous_terms():
+    with pytest.raises(UnexpectedTokenError):
+        parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND ({val2} <> 'STRVAL' OR {val1} = {val3}) SELECT")
+
+def test_unfinished():
+    with pytest.raises(UnexpectedTokenError):
+        parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 AND ({val2} <> 'STRVAL' OR {val1} = {val3}) AND")
+
 
 """
 EXECUTION TESTS (Covering application of SQL to data)
@@ -86,6 +94,14 @@ def test_where_and():
     for record in result:
         assert(record["val1"] > 1)
         assert(record["val2"] == 2)
+
+def test_where_not():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE NOT {val1} > 1")
+    data = [{f"val{i}" : val for i in range(1, 11)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 2)
+    for record in result:
+        assert(record["val1"] < 2)
 
 def test_where_or():
     parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 2 or {val2} = 1")
@@ -122,8 +138,59 @@ def test_where_reference():
 def test_where_string():
     parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} = 'Val1'" )
     data = [{f"val{i}" : f"Val{val}" for i in range(1, 11)} for val in range(0, 4)]
-    print(data)
     result = [record for record in data if parser.where_clause.satisfied(record)]
     assert(len(result) == 1)
     for record in result:
         assert(record["val1"] == "Val1")
+
+def test_invalid_reference_left():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val4} = {val1}" )
+    data = [{f"val{i}" : i for i in range(1, 3)} for val in range(0, 4)]
+    with pytest.raises(UnrecognisedReferenceError):
+        result = [record for record in data if parser.where_clause.satisfied(record)]
+
+def test_invalid_reference_right():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} = {val4}" )
+    data = [{f"val{i}" : i for i in range(1, 4)} for val in range(0, 4)]
+    with pytest.raises(UnrecognisedReferenceError):
+        result = [record for record in data if parser.where_clause.satisfied(record)]
+
+def test_gt():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1" )
+    data = [{f"val{i}" : val for i in range(1, 4)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 2)
+    for record in result:
+        assert(record["val1"] > 1)
+
+def test_gte():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} >= 1" )
+    data = [{f"val{i}" : val for i in range(1, 4)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 3)
+    for record in result:
+        assert(record["val1"] >= 1)
+
+def test_lt():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} < 2" )
+    data = [{f"val{i}" : val for i in range(1, 4)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 2)
+    for record in result:
+        assert(record["val1"] < 2)
+
+def test_lte():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} <= 2" )
+    data = [{f"val{i}" : val for i in range(1, 4)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 3)
+    for record in result:
+        assert(record["val1"] <= 2)
+
+def test_ne():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} <> 2" )
+    data = [{f"val{i}" : val for i in range(1, 4)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 3)
+    for record in result:
+        assert(record["val1"] != 2)

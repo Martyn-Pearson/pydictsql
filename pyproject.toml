@@ -13,12 +13,20 @@ optional = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.3"
+coverage = "^7.6.4"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+
+[tool.coverage.report]
+include = ["tests/*.py", "pydictsql/*.py"]
+show_missing = true
 
 [build-system]
 requires = ["poetry-core"]

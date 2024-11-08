@@ -52,9 +52,7 @@ class _Condition:
         self.rvalue = tokeniser.consume(_TokenType.rvalues())
 
     def __repr__(self):
-        if self.reference and self.operator and self.rvalue:
-            return " ".join([self.reference, self.operator.value, self.rvalue.value])
-        return "Empty / invalid condition"
+        return " ".join([self.reference, self.operator.value, self.rvalue.value])
 
     def satisfied(self, record):
         _Condition._validate_reference(self.reference, record)

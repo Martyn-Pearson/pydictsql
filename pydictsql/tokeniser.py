@@ -76,10 +76,6 @@ class _TokenType(Enum):
         return None
 
     @classmethod
-    def is_comparator(cls, ttype):
-        return ttype in cls.comparators()
-    
-    @classmethod
     def comparators(cls):
         return set([cls.LT, cls.LTE, cls.GT, cls.GTE, cls.EQUALS, cls.NE])
                    
