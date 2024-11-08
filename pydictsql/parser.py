@@ -14,7 +14,8 @@ Condition ::= REFERENCE COMPARATOR <RValue>
 RValue ::= REFERENCE | NUMBER | STRING
 """
 
-def clean_reference(reference):
+def clean_outers(reference):
+    # Removes outer curly brackets or quotes from a value
     return reference[1:-1]
 
 class _References:
@@ -34,7 +35,7 @@ class _References:
 
     def filter_fields(self, record):
         if self.all_references: return record
-        return { key : record[key] for key in map(clean_reference, self.references) }
+        return { key : record[key] for key in map(clean_outers, self.references) }
 
 class _Condition:
     """
@@ -59,10 +60,17 @@ class _Condition:
         _Condition._validate_reference(self.reference, record)
         if self.rvalue.ttype == _TokenType.REFERENCE:
             _Condition._validate_reference(self.rvalue.value, record)
-        lvalue = record[clean_reference(self.reference)]
-        rvalue = record[clean_reference(self.rvalue.value)] if self.rvalue.ttype == _TokenType.REFERENCE else self.rvalue.value
+        lvalue = record[clean_outers(self.reference)]
+        match self.rvalue.ttype:
+            case _TokenType.REFERENCE:
+                rvalue = record[clean_outers(self.rvalue.value)]
+            case _TokenType.STRING:
+                rvalue = clean_outers(self.rvalue.value)
+            case _ :
+                rvalue = self.rvalue.value
         if not isinstance(lvalue, str):
             rvalue = type(lvalue)(rvalue)
+
         match self.operator.ttype:
             case _TokenType.LT: return lvalue < rvalue
             case _TokenType.LTE: return lvalue <= rvalue
@@ -70,11 +78,10 @@ class _Condition:
             case _TokenType.GTE: return lvalue >= rvalue
             case _TokenType.EQUALS: return lvalue == rvalue
             case _TokenType.NE: return lvalue != rvalue
-     
         
     @staticmethod
     def _validate_reference(reference, record):
-        if not clean_reference(reference) in record:
+        if not clean_outers(reference) in record:
             raise UnrecognisedReferenceError(reference)
 
 class _WherePrimary:
@@ -167,7 +174,7 @@ class _WhereClause:
         return repr(self.where_term) + (" OR " + repr(self.where_clause) if self.where_clause else "")
 
     def satisfied(self, record):
-        return self.where_term.satisfied(record) or (self.where_clause and self.where_clause.satisfied(record))
+        return self.where_term.satisfied(record) or (self.where_clause is not None and self.where_clause.satisfied(record))
 
 class _Parser:
     """

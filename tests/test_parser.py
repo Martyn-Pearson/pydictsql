@@ -77,3 +77,53 @@ def test_simple_where():
     assert(len(result) == 2)
     for record in result:
         assert(record["val1"] > 1)
+
+def test_where_and():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 1 and {val2} = 2")
+    data = [{f"val{i}" : val for i in range(1, 11)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 1)
+    for record in result:
+        assert(record["val1"] > 1)
+        assert(record["val2"] == 2)
+
+def test_where_or():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} > 2 or {val2} = 1")
+    data = [{f"val{i}" : val for i in range(1, 11)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 2)
+    for record in result:
+        assert(record["val1"] > 2 or record["val2"] == 1)
+
+def test_where_bracketedand():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE ({val1} > 2 and {val2} = 3) or ({val2} = 1 and {val3} = 1)" )
+    data = [{f"val{i}" : val for i in range(1, 11)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 2)
+    for record in result:
+        assert((record["val1"] > 2 and record["val2"] == 3) or (record["val2"] == 1 and record["val3"] == 1))
+
+def test_where_bracketedor():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE ({val1} > 1 or {val2} = 1) and ({val2} = 1 or {val3} = 2)" )
+    data = [{f"val{i}" : val for i in range(1, 11)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 2)
+    for record in result:
+        assert((record["val1"] > 1 or record["val2"] == 1) and (record["val2"] == 1 or record["val3"] == 2))
+
+def test_where_reference():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} = {val2}" )
+    data = [{f"val{i}" : val for i in range(1, 11)} for val in range(0, 4)]
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 4)
+    for record in result:
+        assert(record["val1"] == record["val2"])
+
+def test_where_string():
+    parser = _Parser("SELECT {val1}, {val2},{val3} FROM {source} WHERE {val1} = 'Val1'" )
+    data = [{f"val{i}" : f"Val{val}" for i in range(1, 11)} for val in range(0, 4)]
+    print(data)
+    result = [record for record in data if parser.where_clause.satisfied(record)]
+    assert(len(result) == 1)
+    for record in result:
+        assert(record["val1"] == "Val1")
