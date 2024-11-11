@@ -45,7 +45,7 @@ class DictFilter:
             if self._parser.satisfied(record):
                 yield (self._parser.filter_fields(record))
 
-    def _validate(self, is_generator, **kwargs):
+    def _validate(self, **kwargs):
         if len(kwargs) != 1:
             raise ValueError(
                 "Method takes one named parameter, denoting the data source"
@@ -54,7 +54,7 @@ class DictFilter:
         if coll_name != self._parser.from_ref():
             raise ValueError("Collection name does not match FROM reference in SQL")
         if not (
-            isinstance(kwargs[coll_name], list) or isinstance(kwargs[coll_name], tuple or isinstance(kwargs[coll_name], Generator))
+            isinstance(kwargs[coll_name], list) or isinstance(kwargs[coll_name], tuple) or isinstance(kwargs[coll_name], Generator)
         ):
             raise ValueError("Collection to be filtered must be a list, tuple or a generator")
 

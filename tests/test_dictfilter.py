@@ -35,16 +35,13 @@ def test_invalid_collections():
 def test_invalid_collections_gen():
     filter = pydictsql.DictFilter("SELECT * FROM {collection}")
     with pytest.raises(ValueError):
-        for result in filter.filtergen(collection=set()):
-            pass
+        for result in filter.filtergen(collection=set()): pass
 
     with pytest.raises(ValueError):
-        for result in filter.filtergen(collection={}):
-            pass
+        for result in filter.filtergen(collection={}): pass
 
     with pytest.raises(ValueError):
-        for result in filter.filtergen(collection=7):
-            pass
+        for result in filter.filtergen(collection=7): pass
 
 
 NAMES = [
