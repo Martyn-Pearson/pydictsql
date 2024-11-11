@@ -14,9 +14,11 @@ Condition ::= REFERENCE COMPARATOR <RValue>
 RValue ::= REFERENCE | NUMBER | STRING
 """
 
+
 def clean_outers(reference):
     # Removes outer curly brackets or quotes from a value
     return reference[1:-1]
+
 
 class _References:
     def __init__(self):
@@ -34,13 +36,16 @@ class _References:
                 self.references.append(tokeniser.consume(_TokenType.REFERENCE).value)
 
     def filter_fields(self, record):
-        if self.all_references: return record
-        return { key : record[key] for key in map(clean_outers, self.references) }
+        if self.all_references:
+            return record
+        return {key: record[key] for key in map(clean_outers, self.references)}
+
 
 class _Condition:
     """
     Constructs a condition container as per the grammar above
     """
+
     def __init__(self):
         self.reference = None
         self.operator = None
@@ -64,28 +69,36 @@ class _Condition:
                 rvalue = record[clean_outers(self.rvalue.value)]
             case _TokenType.STRING:
                 rvalue = clean_outers(self.rvalue.value)
-            case _ :
+            case _:
                 rvalue = self.rvalue.value
         if not isinstance(lvalue, str):
             rvalue = type(lvalue)(rvalue)
 
         match self.operator.ttype:
-            case _TokenType.LT: return lvalue < rvalue
-            case _TokenType.LTE: return lvalue <= rvalue
-            case _TokenType.GT: return lvalue > rvalue
-            case _TokenType.GTE: return lvalue >= rvalue
-            case _TokenType.EQUALS: return lvalue == rvalue
-            case _TokenType.NE: return lvalue != rvalue
-        
+            case _TokenType.LT:
+                return lvalue < rvalue
+            case _TokenType.LTE:
+                return lvalue <= rvalue
+            case _TokenType.GT:
+                return lvalue > rvalue
+            case _TokenType.GTE:
+                return lvalue >= rvalue
+            case _TokenType.EQUALS:
+                return lvalue == rvalue
+            case _TokenType.NE:
+                return lvalue != rvalue
+
     @staticmethod
     def _validate_reference(reference, record):
         if not clean_outers(reference) in record:
             raise UnrecognisedReferenceError(reference)
 
+
 class _WherePrimary:
     """
     Constructs a where primary container as per the grammar above
     """
+
     def __init__(self):
         self.where_clause = None
         self.condition = None
@@ -112,10 +125,12 @@ class _WherePrimary:
         else:
             return self.condition.satisfied(record)
 
+
 class _WhereFactor:
     """
     Constructs a where factor container as per the grammar above
     """
+
     def __init__(self):
         self.where_primary = _WherePrimary()
         self.bool_not = False
@@ -132,10 +147,12 @@ class _WhereFactor:
     def satisfied(self, record):
         return self.where_primary.satisfied(record) ^ self.bool_not
 
+
 class _WhereTerm:
     """
     Constructs a where term container as per the grammar above
     """
+
     def __init__(self):
         self.where_factor = _WhereFactor()
         self.where_term = None
@@ -148,15 +165,21 @@ class _WhereTerm:
             self.where_term.parse(tokeniser)
 
     def __repr__(self):
-        return repr(self.where_factor) + (" AND " + repr(self.where_term) if self.where_term else "")
-    
+        return repr(self.where_factor) + (
+            " AND " + repr(self.where_term) if self.where_term else ""
+        )
+
     def satisfied(self, record):
-        return self.where_factor.satisfied(record) and (self.where_term is None or self.where_term.satisfied(record))
+        return self.where_factor.satisfied(record) and (
+            self.where_term is None or self.where_term.satisfied(record)
+        )
+
 
 class _WhereClause:
     """
     Constructs a where clause container as per the grammar above
     """
+
     def __init__(self):
         self.where_term = _WhereTerm()
         self.where_clause = None
@@ -169,10 +192,15 @@ class _WhereClause:
             self.where_clause.parse(tokeniser)
 
     def __repr__(self):
-        return repr(self.where_term) + (" OR " + repr(self.where_clause) if self.where_clause else "")
+        return repr(self.where_term) + (
+            " OR " + repr(self.where_clause) if self.where_clause else ""
+        )
 
     def satisfied(self, record):
-        return self.where_term.satisfied(record) or (self.where_clause is not None and self.where_clause.satisfied(record))
+        return self.where_term.satisfied(record) or (
+            self.where_clause is not None and self.where_clause.satisfied(record)
+        )
+
 
 class _Parser:
     """
@@ -184,19 +212,21 @@ class _Parser:
 
     def __init__(self, sql: str):
         self.tokeniser = _Tokeniser(sql)
-        # Because references and fromref are straightforward, we store them directly here, but as the 
+        # Because references and fromref are straightforward, we store them directly here, but as the
         # where clause hierarchy is more complex, that is stored in child objects
-        self._references = _References() 
+        self._references = _References()
         self._fromref = ""
         self._where_clause = None
         self._parse()
 
     def satisfied(self, record):
-        return True if self._where_clause is None else self._where_clause.satisfied(record)
+        return (
+            True if self._where_clause is None else self._where_clause.satisfied(record)
+        )
 
     def filter_fields(self, record):
         return self._references.filter_fields(record)
-    
+
     def from_ref(self):
         return clean_outers(self._fromref)
 
@@ -217,4 +247,3 @@ class _Parser:
     def _parse_where_clause(self):
         self._where_clause = _WhereClause()
         self._where_clause.parse(self.tokeniser)
-

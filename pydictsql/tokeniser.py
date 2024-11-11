@@ -78,10 +78,11 @@ class _TokenType(Enum):
     @classmethod
     def comparators(cls):
         return set([cls.LT, cls.LTE, cls.GT, cls.GTE, cls.EQUALS, cls.NE])
-                   
+
     @classmethod
     def rvalues(cls):
         return set([cls.REFERENCE, cls.STRING, cls.NUMBER])
+
 
 class _Tokeniser:
     """
