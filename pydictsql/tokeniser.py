@@ -88,7 +88,7 @@ class _Tokeniser:
     """
     Constructs a tokeniser, which tokenises the given SQL string
     :param sql: SQL string to be tokenised
-    :raises InvalidTokenException: Raised if an unrecognised token is read (for example, an invalid keyword)
+    :raises InvalidTokenError: Raised if an unrecognised token is read (for example, an invalid keyword)
     """
 
     def __init__(self, sql: str):
