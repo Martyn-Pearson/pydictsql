@@ -1,5 +1,5 @@
 from .parser import _Parser
-from typing import Union
+from typing import Union, Generator
 
 class DictFilter:
     """
@@ -19,17 +19,41 @@ class DictFilter:
     :raises: UnrecognisedReferenceException if a reference is made to a field not in the data
     """
     def filter(self, **kwargs) -> Union[list, tuple]:
+        self._validate(False, **kwargs)
+        coll_name = next(iter(kwargs.keys()))
+        return tuple(self._filter(kwargs[coll_name])) if isinstance(kwargs[coll_name], tuple) else self._filter(kwargs[coll_name]) 
+
+    """
+    Applies the SQL provided when instantiated to a list or tuple of records, yielding each machine record in turn
+    :param kwargs: Single named argument providing the collection to be filtered. The name of the argument must match the FROM reference in the SQL
+    :yields: Each record matching the SQL criteria
+    :raises: ValueError if parameters are invalid
+    :raises: UnrecognisedReferenceException if a reference is made to a field not in the data
+    """
+    def filtergen(self, **kwargs):
+        self._validate(True, **kwargs)
+        coll_name = next(iter(kwargs.keys()))
+        for record in kwargs[coll_name]:
+            if self._parser.satisfied(record):
+                yield(self._parser.filter_fields(record))
+
+
+    def _validate(self, is_generator, **kwargs):
+        print("Validating")
         if len(kwargs) != 1:
             raise ValueError("Method takes one named parameter, denoting the data source")
         coll_name = next(iter(kwargs.keys()))
-        if coll_name != self._parser.fromref:
+        if coll_name != self._parser.from_ref():
             raise ValueError("Collection name does not match FROM reference in SQL")
-        source = kwargs[coll_name]
-        if not(isinstance(source, list) or isinstance(source, tuple)):
-            raise ValueError("Collection to be filtered must be a list or tuple")
+        print(is_generator, type(kwargs[coll_name]))
+        if not(isinstance(kwargs[coll_name], list) or isinstance(kwargs[coll_name], tuple)):
+            if is_generator:
+                print("Checking generator")
+                if not isinstance(kwargs[coll_name], Generator):
+                    raise ValueError("Collection to be filtered must be a list or tuple or a generator")
+            else:
+                raise ValueError("Collection to be filtered must be a list or tuple")
 
-        return self._filter(source) if isinstance(source, list) else tuple(self._filter(source))
-    
 
     def _filter(self, source):
-        return [self._parser.references.filter_fields(record) for record in source if self._parser.where_clause.satisfied(record)]
+        return [self._parser.filter_fields(record) for record in source if self._parser.satisfied(record)]

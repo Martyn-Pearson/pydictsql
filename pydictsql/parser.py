@@ -186,16 +186,25 @@ class _Parser:
         self.tokeniser = _Tokeniser(sql)
         # Because references and fromref are straightforward, we store them directly here, but as the 
         # where clause hierarchy is more complex, that is stored in child objects
-        self.references = _References() 
-        self.fromref = ""
-        self.where_clause = None
+        self._references = _References() 
+        self._fromref = ""
+        self._where_clause = None
         self._parse()
+
+    def satisfied(self, record):
+        return True if self._where_clause is None else self._where_clause.satisfied(record)
+
+    def filter_fields(self, record):
+        return self._references.filter_fields(record)
+    
+    def from_ref(self):
+        return clean_outers(self._fromref)
 
     def _parse(self):
         self.tokeniser.consume(_TokenType.SELECT)
         self._parse_references()
         self.tokeniser.consume(_TokenType.FROM)
-        self.fromref = self.tokeniser.consume(_TokenType.REFERENCE).value
+        self._fromref = self.tokeniser.consume(_TokenType.REFERENCE).value
         if self.tokeniser.next_is(_TokenType.WHERE):
             self.tokeniser.consume(_TokenType.WHERE)
             self._parse_where_clause()
@@ -203,9 +212,9 @@ class _Parser:
             raise UnexpectedTokenError(self.tokeniser.peek_next())
 
     def _parse_references(self):
-        self.references.parse(self.tokeniser)
+        self._references.parse(self.tokeniser)
 
     def _parse_where_clause(self):
-        self.where_clause = _WhereClause()
-        self.where_clause.parse(self.tokeniser)
+        self._where_clause = _WhereClause()
+        self._where_clause.parse(self.tokeniser)
 
