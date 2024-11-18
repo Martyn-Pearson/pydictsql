@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pydictsql"
 version = "0.1.0"
-description = ""
+description = "Library allowing lists of dictionaries to be filtered using SQL"
 authors = ["Martyn Pearson <martynjpearson@hotmail.com>"]
 readme = "README.md"
 

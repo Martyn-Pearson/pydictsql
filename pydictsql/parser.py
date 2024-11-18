@@ -206,8 +206,8 @@ class _Parser:
     """
     Constructs a parser and parses the given SQL, storing the reference and conditions to be used when querying data
     :param sql: SQL to be parsed
-    :raises InvalidTokenException: Raised (by the tokeniser) if an invalid token is read
-    :raises UnexpectedTokenException: Raised when parsing we hit a token which does not match expected type
+    :raises InvalidTokenError: Raised (by the tokeniser) if an invalid token is read
+    :raises UnexpectedTokenError: Raised when parsing we hit a token which does not match expected type
     """
 
     def __init__(self, sql: str):
